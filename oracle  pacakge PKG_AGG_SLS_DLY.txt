@@ -1,0 +1,127 @@
+CREATE OR REPLACE PACKAGE SYSTEM.PKG_AGG_SLS_DLY 
+AS
+PROCEDURE  PRC_AGG_SLS_DLY_LGC(STRT_DATE INTEGER,END_DATE INTEGER) ;
+PROCEDURE PRC_AGG_SLS_DLY_TMP (S_DATE_KEY INTEGER);
+PROCEDURE PRC_AGG_SLS_DLY_INC (S_DATE_KEY INTEGER);
+PROCEDURE PRC_AGG_SLS_DLY_FNL(S_DATE_KEY INTEGER);
+END;
+/
+
+
+CREATE OR REPLACE PACKAGE  BODY        SYSTEM.PKG_AGG_SLS_DLY 
+AS
+PROCEDURE  PRC_AGG_SLS_DLY_LGC(STRT_DATE INTEGER,END_DATE INTEGER) 
+AS
+BEGIN 
+
+FOR   I  IN  (SELECT  TO_CHAR(D_DATE,'YYYYMMDD') D_DATE FROM c##aslam.DIM_DATE  
+				WHERE  D_DATE  BETWEEN  TO_DATE(STRT_DATE,'YYYYMMDD') AND  TO_DATE(END_DATE,'YYYYMMDD') 
+							ORDER BY  1 
+			 )
+LOOP
+ PKG_AGG_SLS_DLY.PRC_AGG_SLS_DLY_TMP (I.D_DATE );
+ PKG_AGG_SLS_DLY.PRC_AGG_SLS_DLY_INC (I.D_DATE );
+ PKG_AGG_SLS_DLY.PRC_AGG_SLS_DLY_FNL(I.D_DATE );
+END LOOP;
+
+END;
+
+PROCEDURE PRC_AGG_SLS_DLY_TMP (S_DATE_KEY INTEGER)
+AS 
+BEGIN 
+    BEGIN 
+        EXECUTE IMMEDIATE 'DROP  TABLE  AGG_SLS_DLY_TMP ';
+            EXCEPTION  WHEN  OTHERS  THEN 
+			   NULL;
+	END;
+	
+	EXECUTE IMMEDIATE  'CREATE  TABLE  AGG_SLS_DLY_TMP AS 
+			SELECT
+                  SDATE,
+                  sum(UNITCOST          ) as UNITCOST        ,
+                  sum(UNITPRICE         ) as UNITPRICE       ,
+                  sum(SALESQUANTITY     ) as SALESQUANTITY   ,
+                  sum(RETURNQUANTITY    ) as RETURNQUANTITY  ,
+                  sum(RETURAMOUNT       ) as RETURAMOUNT     ,
+                  sum(DISCOUNTQUANTITY  ) as DISCOUNTQUANTITY,
+                  sum(DISCOUNTAMOUNT    ) as DISCOUNTAMOUNT  ,
+                  sum(TOTALCOST         ) as TOTALCOST       ,
+                  sum(SALESAMOUNT       ) as SALESAMOUNT       
+                  from c##aslam.sales2007 fct ,
+                       c##aslam.dim_store  DS
+                  WHERE FCT.STOREKEY=DS.STOREKEY
+                  AND  SDATE= TO_DATE('||S_DATE_KEY||',''YYYYMMDD'')
+                  GROUP  BY SDATE';
+
+END;
+
+
+PROCEDURE PRC_AGG_SLS_DLY_INC (S_DATE_KEY INTEGER)
+AS
+
+BEGIN  
+      BEGIN 
+           EXECUTE IMMEDIATE 'DROP  TABLE  AGG_SLS_DLY_INC ';
+               EXCEPTION  WHEN  OTHERS  THEN 
+      		   NULL;
+      END;
+      
+      EXECUTE IMMEDIATE 'CREATE  TABLE  AGG_SLS_DLY_INC AS 
+	            SELECT 
+                     TO_DATE('||S_DATE_KEY||',''YYYYMMDD'') AS S_DATE,
+                     sum(UNITCOST          ) as UNITCOST        ,
+                     sum(UNITPRICE         ) as UNITPRICE       ,
+                     sum(SALESQUANTITY     ) as SALESQUANTITY   ,
+                     sum(RETURNQUANTITY    ) as RETURNQUANTITY  ,
+                     sum(RETURAMOUNT       ) as RETURAMOUNT     ,
+                     sum(DISCOUNTQUANTITY  ) as DISCOUNTQUANTITY,
+                     sum(DISCOUNTAMOUNT    ) as DISCOUNTAMOUNT  ,
+                     sum(TOTALCOST         ) as TOTALCOST       ,
+                     sum(SALESAMOUNT       ) as SALESAMOUNT     
+                     FROM 
+                     (
+                     SELECT
+                     UNITCOST        ,
+                     UNITPRICE       ,
+                     SALESQUANTITY   ,
+                     RETURNQUANTITY  ,
+                     RETURAMOUNT     ,
+                     DISCOUNTQUANTITY,
+                     DISCOUNTAMOUNT  ,
+                     TOTALCOST       ,
+                     SALESAMOUNT      
+                     from AGG_SLS_DLY 
+                     WHERE  SDATE= TO_DATE('||S_DATE_KEY||',''YYYYMMDD'')-1
+                     UNION  ALL
+                     SELECT
+                     UNITCOST        ,
+                     UNITPRICE       ,
+                     SALESQUANTITY   ,
+                     RETURNQUANTITY  ,
+                     RETURAMOUNT     ,
+                     DISCOUNTQUANTITY,
+                     DISCOUNTAMOUNT  ,
+                     TOTALCOST       ,
+                     SALESAMOUNT       
+                     from AGG_SLS_DLY_TMP
+                     WHERE  SDATE= TO_DATE('||S_DATE_KEY||',''YYYYMMDD'')
+                     )';  
+
+
+END;
+
+PROCEDURE PRC_AGG_SLS_DLY_FNL(S_DATE_KEY INTEGER)
+AS
+BEGIN 
+EXECUTE IMMEDIATE  'DELETE  FROM  AGG_SLS_DLY 
+					WHERE  SDATE= TO_DATE('||S_DATE_KEY||',''YYYYMMDD'')';
+
+
+EXECUTE IMMEDIATE  'INSERT  INTO AGG_SLS_DLY
+					SELECT  *  FROM  AGG_SLS_DLY_INC';
+					
+
+END;
+
+END PKG_AGG_SLS_DLY;
+/

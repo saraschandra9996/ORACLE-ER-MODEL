@@ -1,0 +1,55 @@
+CREATE TABLE public.fct_sls_2007 (
+	saleskey numeric(10) NULL,
+	datekey numeric(10) NULL,
+	channelkey numeric(5) NULL,
+	storekey numeric(6) NULL,
+	productkey numeric(10) NULL,
+	promotionkey numeric(5) NULL,
+	unitcost numeric(10, 4) NULL,
+	unitprice numeric(10, 4) NULL,
+	salesquantity numeric(10) NULL,
+	returnquantity numeric(10) NULL,
+	returnamount numeric(10) NULL,
+	discountquantity numeric(10) NULL,
+	discountamount numeric(10, 6) NULL,
+	totalcost numeric(10, 4) NULL,
+	salesamount numeric(12, 6) NULL,
+	geographykey numeric(10) NULL,
+	sdate date NULL
+);
+
+
+CREATE TABLE public.dim_date (
+	d_date date NULL,
+	calendaryear varchar(100) NULL,
+	calendarhalfyear varchar(100) NULL,
+	calendarquarter varchar(100) NULL,
+	calendarmonth varchar(100) NULL,
+	calendarweek varchar(100) NULL,
+	calendardayofweek varchar(100) NULL,
+	fiscalyear varchar(100) NULL,
+	fiscalhalfyear varchar(100) NULL,
+	fiscalquarter varchar(100) NULL,
+	fiscalmonth varchar(100) NULL,
+	isworkday varchar(100) NULL,
+	europeseason varchar(100) NULL,
+	northamericaseason varchar(100) NULL,
+	asiaseason varchar(100) NULL
+);
+
+
+CREATE TABLE public.dim_store (
+	storekey numeric(5) NULL,
+	storemanager numeric(6) NULL,
+	storename varchar(35) NULL,
+	opendate date NULL,
+	closedate date NULL,
+	zipcode numeric(10) NULL,
+	storephone varchar(15) NULL,
+	addressline1 varchar(70) NULL,
+	addressline2 varchar(70) NULL,
+	employeecount numeric(5) NULL,
+	sellingareasize numeric(6) NULL,
+	managerfirstname varchar(15) NULL,
+	managerlastname varchar(15) NULL
+);
